@@ -1,95 +1,128 @@
 # UdaPlay - AI Game Research Agent Project
 
 ## Project Overview
-UdaPlay is an AI-powered research agent for the video game industry. This project is divided into two main parts that will help you build a sophisticated AI agent capable of answering questions about video games using both local knowledge and web searches.
+UdaPlay is an AI-powered research agent for the video game industry. This project leverages advanced AI capabilities to help research and answer questions about video games using both local knowledge bases and web searches.
 
 ## Project Structure
 
-### Part 1: Offline RAG (Retrieval-Augmented Generation)
-In this part, you'll build a Vector Database using ChromaDB to store and retrieve video game information efficiently.
-
-Key tasks:
-- Set up ChromaDB as a persistent client
-- Create a collection with appropriate embedding functions
-- Process and index game data from JSON files
-- Each game document contains:
-  - Name
-  - Platform
-  - Genre
-  - Publisher
-  - Description
-  - Year of Release
-
-### Part 2: AI Agent Development
-Build an intelligent agent that combines local knowledge with web search capabilities.
-
-The agent will have the following capabilities:
-1. Answer questions using internal knowledge (RAG)
-2. Search the web when needed
-3. Maintain conversation state
-4. Return structured outputs
-5. Store useful information for future use
-
-Required Tools to Implement:
-1. `retrieve_game`: Search the vector database for game information
-2. `evaluate_retrieval`: Assess the quality of retrieved results
-3. `game_web_search`: Perform web searches for additional information
+```
+udaplay/
+├── lib/                              # Main library modules
+│   ├── agents.py                     # AI agent implementations
+│   ├── documents.py                  # Document handling utilities
+│   ├── evaluation.py                 # Evaluation metrics and tools
+│   ├── llm.py                        # Language model integrations
+│   ├── loaders.py                    # Data loading utilities
+│   ├── long_memory.py                # Long-term memory management
+│   ├── messages.py                   # Message handling
+│   ├── parsers.py                    # Output parsing utilities
+│   ├── rag.py                        # Retrieval-Augmented Generation
+│   ├── short_memory.py               # Short-term memory management
+│   ├── state_machine.py              # State management
+│   ├── tooling.py                    # Tool implementations
+│   └── vector_db.py                  # Vector database utilities
+├── games/                            # Game data files (JSON format)
+├── long_term_memory_db/              # Chroma vector database for long-term memory
+├── udaplay_db/                       # Chroma vector database for game data
+├── Udaplay_ai_agent.ipynb            # Main AI agent notebook
+├── Udaplay_generate_games_vector_db.ipynb  # Vector DB generation notebook
+├── pyproject.toml                    # Project configuration and dependencies
+├── ruff.toml                         # Ruff linter configuration
+└── README.md                         # This file
+```
 
 ## Requirements
 
-### Environment Setup
-Create a `.env` file with the following API keys:
+- Python 3.12+
+- `uv` package manager
+
+### Dependencies
+
+The project uses the following key dependencies:
+
+- **chromadb** (>=1.4.0) - Vector database for storing and retrieving embeddings
+- **openai** (>=2.14.0) - OpenAI API integration for LLM capabilities
+- **tavily-python** (>=0.7.17) - Web search capabilities
+- **pandas** (>=2.3.3) - Data manipulation and analysis
+- **python-dotenv** (>=1.2.1) - Environment variable management
+- **pdfplumber** (>=0.11.9) - PDF parsing utilities
+- **requests** (>=2.32.5) - HTTP library
+- **sqlalchemy** (>=2.0.45) - Database ORM
+
+See `pyproject.toml` for the complete list of dependencies.
+
+## Setup Instructions
+
+### 1. Install `uv` Package Manager
+
+If you haven't already, install `uv`:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
-OPENAI_API_KEY="YOUR_KEY"
-CHROMA_OPENAI_API_KEY="YOUR_KEY"
-TAVILY_API_KEY="YOUR_KEY"
+
+Or install via package manager:
+```bash
+# macOS
+brew install uv
+
+# Linux (Ubuntu/Debian)
+sudo apt install uv
 ```
 
-### Project Dependencies
-- Python 3.11+
-- ChromaDB
-- OpenAI
-- Tavily
-- dotenv
+### 2. Environment Setup
 
-### Directory Structure
+Create a `.env` file in the project root with the following API keys:
+
 ```
-project/
-├── starter/
-│   ├── games/           # JSON files with game data
-│   ├── lib/             # Custom library implementations
-│   │   ├── llm.py       # LLM abstractions
-│   │   ├── messages.py  # Message handling
-│   │   ├── ...
-│   │   └── tooling.py   # Tool implementations
-│   ├── Udaplay_01_starter_project.ipynb  # Part 1 implementation
-│   └── Udaplay_02_starter_project.ipynb  # Part 2 implementation
+OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
+TAVILY_API_KEY="YOUR_TAVILY_API_KEY"
 ```
 
-## Getting Started
+### 3. Install Dependencies
 
-1. Create and activate a virtual environment
-2. Install required dependencies
-3. Set up your `.env` file with necessary API keys
-4. Follow the notebooks in order:
-   - Complete Part 1 to set up your vector database
-   - Complete Part 2 to implement the AI agent
+Install project dependencies using `uv`:
 
-## Testing Your Implementation
+```bash
+# Create a virtual environment and install dependencies
+uv sync
 
-After completing both parts, test your agent with questions like:
-- "When was Pokémon Gold and Silver released?"
-- "Which one was the first 3D platformer Mario game?"
-- "Was Mortal Kombat X released for PlayStation 5?"
+# Or install specific dependencies
+uv pip install -e .
+```
 
-## Advanced Features
+### 4. Running the Project
 
-After completing the basic implementation, you can enhance your agent with:
-- Long-term memory capabilities
-- Additional tools and capabilities
+#### Using Jupyter Notebooks
 
-## Notes
-- Make sure to implement proper error handling
-- Follow best practices for API key management
-- Document your code thoroughly
-- Test your implementation with various types of queries
+Start Jupyter:
+```bash
+# Using uv
+uv run jupyter notebook
+
+# Or if jupyter is installed
+jupyter notebook
+```
+
+> **⚠️ Important:** You must run `Udaplay_generate_games_vector_db.ipynb` **first** to generate the vector database from the game data. This will populate the necessary database files in the `udaplay_db/` directory that the main agent requires.
+
+Then open:
+1. **First:** `Udaplay_generate_games_vector_db.ipynb` - Generate vector database from game data
+2. **Then:** `Udaplay_ai_agent.ipynb` - Main AI agent implementation
+
+## Development
+
+### Code Quality
+
+This project uses **Ruff** for linting and code quality checks. Configuration is in `ruff.toml`.
+
+Run linting:
+```bash
+uv run ruff check .
+uv run ruff format .
+```
+
