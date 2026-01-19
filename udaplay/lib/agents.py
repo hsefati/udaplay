@@ -5,7 +5,7 @@ from lib.state_machine import StateMachine, Step, EntryPoint, Termination, Run
 from lib.llm import LLM
 from lib.messages import AIMessage, UserMessage, SystemMessage, ToolMessage
 from lib.tooling import Tool, ToolCall
-from lib.memory import ShortTermMemory
+from lib.short_memory import ShortTermMemory
 
 # Define the state schema
 class AgentState(TypedDict):

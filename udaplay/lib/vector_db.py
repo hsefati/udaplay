@@ -4,6 +4,8 @@ import chromadb
 from chromadb.utils import embedding_functions
 from chromadb.api.models.Collection import Collection as ChromaCollection
 from chromadb.api.types import EmbeddingFunction, QueryResult, GetResult
+import os
+import json
 
 from lib.loaders import PDFLoader
 from lib.documents import Document, Corpus
@@ -154,8 +156,16 @@ class VectorStoreManager:
     - Store lifecycle management (create, get, delete)
     """
 
-    def __init__(self, openai_api_key: str):
-        self.chroma_client = chromadb.Client()
+    def __init__(self, openai_api_key: str, db_path: str = "./chroma_db"):
+        """
+        Initialize VectorStoreManager with persistent ChromaDB.
+        
+        Args:
+            openai_api_key (str): OpenAI API key for embeddings
+            db_path (str): Path to persistent ChromaDB directory (default: "./chroma_db")
+        """
+        self.db_path = db_path
+        self.chroma_client = chromadb.PersistentClient(path=db_path)
         self.embedding_function = self._create_embedding_function(openai_api_key)
 
     def _create_embedding_function(self, api_key: str) -> EmbeddingFunction:
@@ -250,3 +260,92 @@ class CorpusLoaderService:
         print(f"Pages from `{pdf_path}` added!")
 
         return store
+
+
+class GameLoaderService:
+    """
+    Service for loading game JSON files into vector stores.
+    
+    This class specializes in loading game records (from JSON files) into vector
+    stores with indexed content for semantic search. Each game file becomes a
+    searchable document with the game's metadata preserved.
+    
+    The service handles:
+    - Directory traversal and JSON parsing
+    - Content indexing and formatting
+    - Document creation with game metadata
+    - Batch insertion into vector stores
+    """
+
+    def __init__(self, vector_store_manager: VectorStoreManager):
+        self.manager = vector_store_manager
+
+    def load_games(self, store_name: str, data_dir: str) -> VectorStore:
+        """
+        Load a directory of game JSON files into a vector store.
+
+        Each JSON file in `data_dir` is expected to contain a game record with
+        fields like Platform, Name, YearOfRelease, and Description. For each file,
+        a Document is created with the content formatted for search and the entire
+        game object stored as metadata. The file name (without extension) is used
+        as the document ID.
+
+        Args:
+            store_name (str): Name of the vector store to create or use
+            data_dir (str): Path to the directory containing game .json files
+
+        Returns:
+            VectorStore: The vector store containing the loaded game documents
+            
+        Example:
+            >>> manager = VectorStoreManager(OPENAI_API_KEY)
+            >>> loader = GameLoaderService(manager)
+            >>> store = loader.load_games("games_db", "games")
+            >>> results = store.query(["racing games"])
+        """
+        store = self.manager.get_or_create_store(store_name)
+        print(f"VectorStore `{store_name}` ready!")
+
+        corpus = Corpus()
+
+        for file_name in sorted(os.listdir(data_dir)):
+            if not file_name.endswith(".json"):
+                continue
+
+            file_path = os.path.join(data_dir, file_name)
+            with open(file_path, "r", encoding="utf-8") as f:
+                try:
+                    game = json.load(f)
+                except Exception:
+                    print(f"Skipping {file_name}: failed to parse JSON")
+                    continue
+
+            # Build indexed text content for games
+            try:
+                content = f"[{game.get('Platform')}] {game.get('Name')} ({game.get('YearOfRelease')}) - {game.get('Description')}"
+            except Exception:
+                # Fallback: stringify the whole object
+                content = json.dumps(game)
+
+            # Use file name (like 001) as ID
+            doc_id = os.path.splitext(file_name)[0]
+
+            corpus.append(
+                Document(
+                    id=doc_id,
+                    content=content,
+                    metadata=game
+                )
+            )
+
+        if len(corpus) == 0:
+            print(f"No game JSON files found in `{data_dir}`")
+            return store
+
+        store.add(corpus)
+        print(f"Games from `{data_dir}` added to `{store_name}`!")
+
+        return store
+    
+    
+
